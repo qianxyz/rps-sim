@@ -1,41 +1,84 @@
+#include <time.h>
+#include <stdlib.h>
+
 #include "raylib.h"
 
-int main(void)
-{
-    const int screenWidth = 640;
-    const int screenHeight = 640;
+enum role {
+	ROCK,
+	PAPER,
+	SCISSORS,
+};
 
-    InitWindow(screenWidth, screenHeight, "rps");
+struct point {
+	enum role role;
+	Vector2 p;
+};
 
-    Vector2 ballPosition = { GetScreenWidth()/2.0f, GetScreenHeight()/2.0f };
-    Vector2 ballSpeed = { 5.0f, 4.0f };
-    int ballRadius = 20;
+#define SCREENWIDTH 640
+#define SCREENHEIGHT 640
+#define NPOINTS 100
 
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+static struct point *points[NPOINTS];
 
-    // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
-    {
-        // Update
-        ballPosition.x += ballSpeed.x;
-        ballPosition.y += ballSpeed.y;
+void populatePoints() {
+	for (int i = 0; i < NPOINTS; ++i) {
+		struct point *p = malloc(sizeof(struct point));
+		p->role = random() % 3;
+		p->p = (Vector2){ random() % SCREENWIDTH, random() % SCREENHEIGHT };
 
-        // Check walls collision for bouncing
-        if ((ballPosition.x >= (GetScreenWidth() - ballRadius)) || (ballPosition.x <= ballRadius)) ballSpeed.x *= -1.0f;
-        if ((ballPosition.y >= (GetScreenHeight() - ballRadius)) || (ballPosition.y <= ballRadius)) ballSpeed.y *= -1.0f;
+		points[i] = p;
+	}
+}
 
-        // Draw
-        BeginDrawing();
+void drawPoint(struct point *pt) {
+	char *s;
+	Color color;
 
-        ClearBackground(RAYWHITE);
+	switch (pt->role) {
+	case ROCK:
+		s = "r";
+		color = RED;
+		break;
+	case PAPER:
+		s = "p";
+		color = GREEN;
+		break;
+	case SCISSORS:
+		s = "s";
+		color = BLUE;
+		break;
+	}
 
-        DrawCircleV(ballPosition, (float)ballRadius, MAROON);
+	DrawText(s, pt->p.x, pt->p.y, 30, color);
+}
 
-        EndDrawing();
-    }
+int main(void) {
+	srand(time(NULL));
 
-    // De-Initialization
-    CloseWindow();
+	populatePoints();
 
-    return 0;
+	InitWindow(SCREENWIDTH, SCREENHEIGHT, "rps");
+
+	SetTargetFPS(60);
+
+	while (!WindowShouldClose()) {
+		BeginDrawing();
+
+			ClearBackground(RAYWHITE);
+
+			for (int i = 0; i < NPOINTS; ++i) {
+				points[i]->p.x += random() % 3 - 1;
+				points[i]->p.y += random() % 3 - 1;
+			}
+
+			for (int i = 0; i < NPOINTS; ++i) {
+				drawPoint(points[i]);
+			}
+
+		EndDrawing();
+	}
+
+	CloseWindow();
+
+	return 0;
 }
