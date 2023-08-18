@@ -36,10 +36,9 @@ int distanceSquared(Vector2 p1, Vector2 p2) {
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 640
 
-#define N_POINTS 100
+#define N_POINTS 80
 
-#define FONT_SIZE 20
-#define RADIUS 16
+#define RADIUS 20
 #define DUEL_DISTANCE (4 * RADIUS * RADIUS)
 
 static struct point *points[N_POINTS];
@@ -124,28 +123,31 @@ void duel() {
 	}
 }
 
-void drawPoint(struct point *pt) {
-	char *s;
-	Color color;
+Texture2D rock, paper, scissors;
 
+void drawPoint(struct point *pt) {
+	Texture2D *t;
 	switch (pt->role) {
 	case ROCK:
-		s = "r";
-		color = RED;
+		t = &rock;
 		break;
 	case PAPER:
-		s = "p";
-		color = GREEN;
+		t = &paper;
 		break;
 	case SCISSORS:
-		s = "s";
-		color = BLUE;
+		t = &scissors;
 		break;
 	}
 
-	DrawCircleV(pt->p, RADIUS, color);
-	Vector2 v = MeasureTextEx(GetFontDefault(), s, FONT_SIZE, 1);
-	DrawText(s, pt->p.x - v.x / 2.0, pt->p.y - v.y / 2.0, FONT_SIZE, BLACK);
+	Rectangle source = { 0.0f, 0.0f, (float)t->width, (float)t->height };
+	Rectangle dest = {
+		pt->p.x - RADIUS,
+		pt->p.y - RADIUS,
+		RADIUS * 2.0,
+		RADIUS * 2.0
+	};
+	Vector2 origin = { 0.0f, 0.0f };
+	DrawTexturePro(*t, source, dest, origin, 0.0f, WHITE);
 }
 
 int main(void) {
@@ -155,7 +157,12 @@ int main(void) {
 
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "rps");
 
-	SetTargetFPS(60);
+	// textures must be loaded after `InitWindow`
+	rock = LoadTexture("assets/rock.png");
+	paper = LoadTexture("assets/paper.png");
+	scissors = LoadTexture("assets/scissors.png");
+
+	SetTargetFPS(30);
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
