@@ -1,5 +1,4 @@
-#include <limits.h>
-#include <stdbool.h>
+#include <float.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -11,27 +10,22 @@ enum role {
 	SCISSORS,
 };
 
-bool win(enum role r1, enum role r2)
-{
-	switch (r1) {
-	case ROCK:
-		return (r2 == SCISSORS);
-	case PAPER:
-		return (r2 == ROCK);
-	case SCISSORS:
-		return (r2 == PAPER);
-	}
-}
+/* win[i][j] = 1 if i wins j */
+int win[3][3] = {
+	{ 0, 0, 1 },
+	{ 1, 0, 0 },
+	{ 0, 1, 0 },
+};
 
 struct point {
 	enum role role;
 	Vector2 p;
 };
 
-int distanceSquared(Vector2 p1, Vector2 p2)
+float distanceSquared(Vector2 p1, Vector2 p2)
 {
-	int dx = p1.x - p2.x;
-	int dy = p1.y - p2.y;
+	float dx = p1.x - p2.x;
+	float dy = p1.y - p2.y;
 	return dx * dx + dy * dy;
 }
 
@@ -40,12 +34,12 @@ int distanceSquared(Vector2 p1, Vector2 p2)
 
 #define N_POINTS 80
 
-#define RADIUS 20
-#define DUEL_DISTANCE (4 * RADIUS * RADIUS)
+/* each point is modeled as a disk */
+#define RADIUS 20.0
 
 static struct point *points[N_POINTS];
 
-void populatePoints()
+void initWorld()
 {
 	for (int i = 0; i < N_POINTS; ++i) {
 		struct point *p = malloc(sizeof(struct point));
@@ -72,14 +66,14 @@ int weightedRandom(float p0, float p1)
 void move(struct point *pt)
 {
 	struct point *nearest = NULL;
-	int dNearest = INT_MAX;
+	float dNearest = FLT_MAX;
 
 	// find the nearest point that it can defeat
 	for (int i = 0; i < N_POINTS; ++i) {
-		if (!win(pt->role, points[i]->role)) {
+		if (!win[pt->role][points[i]->role]) {
 			continue;
 		}
-		int d = distanceSquared(pt->p, points[i]->p);
+		float d = distanceSquared(pt->p, points[i]->p);
 		if (d < dNearest) {
 			nearest = points[i];
 			dNearest = d;
@@ -108,41 +102,40 @@ void move(struct point *pt)
 
 void duel()
 {
+	struct point *p1, *p2;
+
 	for (int i = 0; i < N_POINTS; ++i) {
 		for (int j = i + 1; j < N_POINTS; ++j) {
-			struct point *p1 = points[i];
-			struct point *p2 = points[j];
+			p1 = points[i];
+			p2 = points[j];
 
-			if (distanceSquared(p1->p, p2->p) > DUEL_DISTANCE) {
+			if (distanceSquared(p1->p, p2->p) >
+			    4 * RADIUS * RADIUS) {
 				continue;
 			}
 
-			if (win(p1->role, p2->role)) {
+			if (win[p1->role][p2->role]) {
 				p2->role = p1->role;
 			}
-			if (win(p2->role, p1->role)) {
+			if (win[p2->role][p1->role]) {
 				p1->role = p2->role;
 			}
 		}
 	}
 }
 
-Texture2D rock, paper, scissors;
+Texture2D textures[3];
+
+void loadTextures()
+{
+	textures[ROCK] = LoadTexture("assets/rock.png");
+	textures[PAPER] = LoadTexture("assets/paper.png");
+	textures[SCISSORS] = LoadTexture("assets/scissors.png");
+}
 
 void drawPoint(struct point *pt)
 {
-	Texture2D *t;
-	switch (pt->role) {
-	case ROCK:
-		t = &rock;
-		break;
-	case PAPER:
-		t = &paper;
-		break;
-	case SCISSORS:
-		t = &scissors;
-		break;
-	}
+	Texture2D *t = &textures[pt->role];
 
 	Rectangle source = { 0.0f, 0.0f, (float)t->width, (float)t->height };
 	Rectangle dest = { pt->p.x - RADIUS, pt->p.y - RADIUS, RADIUS * 2.0,
@@ -153,18 +146,14 @@ void drawPoint(struct point *pt)
 
 int main(void)
 {
-	srand(time(NULL));
-
-	populatePoints();
-
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "rps");
-
 	// textures must be loaded after `InitWindow`
-	rock = LoadTexture("assets/rock.png");
-	paper = LoadTexture("assets/paper.png");
-	scissors = LoadTexture("assets/scissors.png");
+	loadTextures();
 
 	SetTargetFPS(30);
+
+	srand(time(NULL));
+	initWorld();
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
