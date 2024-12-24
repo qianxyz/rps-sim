@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <stdbool.h>
-#include <time.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "raylib.h"
 
@@ -11,7 +11,8 @@ enum role {
 	SCISSORS,
 };
 
-bool win(enum role r1, enum role r2) {
+bool win(enum role r1, enum role r2)
+{
 	switch (r1) {
 	case ROCK:
 		return (r2 == SCISSORS);
@@ -27,7 +28,8 @@ struct point {
 	Vector2 p;
 };
 
-int distanceSquared(Vector2 p1, Vector2 p2) {
+int distanceSquared(Vector2 p1, Vector2 p2)
+{
 	int dx = p1.x - p2.x;
 	int dy = p1.y - p2.y;
 	return dx * dx + dy * dy;
@@ -43,20 +45,20 @@ int distanceSquared(Vector2 p1, Vector2 p2) {
 
 static struct point *points[N_POINTS];
 
-void populatePoints() {
+void populatePoints()
+{
 	for (int i = 0; i < N_POINTS; ++i) {
 		struct point *p = malloc(sizeof(struct point));
 		p->role = random() % 3;
-		p->p = (Vector2){
-			random() % SCREEN_WIDTH,
-			random() % SCREEN_HEIGHT
-		};
+		p->p = (Vector2){ random() % SCREEN_WIDTH,
+				  random() % SCREEN_HEIGHT };
 
 		points[i] = p;
 	}
 }
 
-int weightedRandom(float p0, float p1) {
+int weightedRandom(float p0, float p1)
+{
 	float r = (float)random() / (float)RAND_MAX;
 	if (r < p0) {
 		return 0;
@@ -67,7 +69,8 @@ int weightedRandom(float p0, float p1) {
 	}
 }
 
-void move(struct point *pt) {
+void move(struct point *pt)
+{
 	struct point *nearest = NULL;
 	int dNearest = INT_MAX;
 
@@ -103,7 +106,8 @@ void move(struct point *pt) {
 	pt->p.y += dy;
 }
 
-void duel() {
+void duel()
+{
 	for (int i = 0; i < N_POINTS; ++i) {
 		for (int j = i + 1; j < N_POINTS; ++j) {
 			struct point *p1 = points[i];
@@ -125,7 +129,8 @@ void duel() {
 
 Texture2D rock, paper, scissors;
 
-void drawPoint(struct point *pt) {
+void drawPoint(struct point *pt)
+{
 	Texture2D *t;
 	switch (pt->role) {
 	case ROCK:
@@ -140,17 +145,14 @@ void drawPoint(struct point *pt) {
 	}
 
 	Rectangle source = { 0.0f, 0.0f, (float)t->width, (float)t->height };
-	Rectangle dest = {
-		pt->p.x - RADIUS,
-		pt->p.y - RADIUS,
-		RADIUS * 2.0,
-		RADIUS * 2.0
-	};
+	Rectangle dest = { pt->p.x - RADIUS, pt->p.y - RADIUS, RADIUS * 2.0,
+			   RADIUS * 2.0 };
 	Vector2 origin = { 0.0f, 0.0f };
 	DrawTexturePro(*t, source, dest, origin, 0.0f, WHITE);
 }
 
-int main(void) {
+int main(void)
+{
 	srand(time(NULL));
 
 	populatePoints();
@@ -167,17 +169,17 @@ int main(void) {
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 
-			ClearBackground(RAYWHITE);
+		ClearBackground(RAYWHITE);
 
-			for (int i = 0; i < N_POINTS; ++i) {
-				move(points[i]);
-			}
+		for (int i = 0; i < N_POINTS; ++i) {
+			move(points[i]);
+		}
 
-			duel();
+		duel();
 
-			for (int i = 0; i < N_POINTS; ++i) {
-				drawPoint(points[i]);
-			}
+		for (int i = 0; i < N_POINTS; ++i) {
+			drawPoint(points[i]);
+		}
 
 		EndDrawing();
 	}
