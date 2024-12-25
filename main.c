@@ -1,6 +1,7 @@
 #include <float.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include "raylib.h"
 
@@ -42,27 +43,14 @@ static struct point *points[N_POINTS];
 void initWorld()
 {
 	for (int i = 0; i < N_POINTS; ++i) {
-		struct point *p = malloc(sizeof(struct point));
-		p->role = random() % 3;
-		p->p = (Vector2){ random() % SCREEN_WIDTH,
-				  random() % SCREEN_HEIGHT };
-
-		points[i] = p;
+		points[i] = malloc(sizeof(struct point));
+		points[i]->role = random() % 3;
+		points[i]->p = (Vector2){ random() % SCREEN_WIDTH,
+					  random() % SCREEN_HEIGHT };
 	}
 }
 
-int weightedRandom(float p0, float p1)
-{
-	float r = (float)random() / (float)RAND_MAX;
-	if (r < p0) {
-		return 0;
-	} else if (r < p0 + p1) {
-		return 1;
-	} else {
-		return -1;
-	}
-}
-
+/* strategy for each point */
 void move(struct point *pt)
 {
 	struct point *nearest = NULL;
@@ -80,24 +68,16 @@ void move(struct point *pt)
 		}
 	}
 
-	int dx, dy;
-	if (nearest == NULL) {
-		dx = weightedRandom(1.0 / 3.0, 1.0 / 3.0);
-		dy = weightedRandom(1.0 / 3.0, 1.0 / 3.0);
-	} else {
-		float dp;
-
-		dx = nearest->p.x - pt->p.x;
-		dp = (float)dx / ((float)abs(dx) + 100.0) * 2.0 / 3.0;
-		dx = weightedRandom(1.0 / 3.0, 1.0 / 3.0 + dp);
-
-		dy = nearest->p.y - pt->p.y;
-		dp = (float)dy / ((float)abs(dy) + 100.0) * 2.0 / 3.0;
-		dy = weightedRandom(1.0 / 3.0, 1.0 / 3.0 + dp);
+	if (nearest) {
+		float dx = nearest->p.x - pt->p.x;
+		float dy = nearest->p.y - pt->p.y;
+		float d = sqrt(dx * dx + dy * dy);
+		if (d < 1.0) {
+			return;
+		}
+		pt->p.x += dx / d;
+		pt->p.y += dy / d;
 	}
-
-	pt->p.x += dx;
-	pt->p.y += dy;
 }
 
 void duel()
@@ -136,7 +116,6 @@ void loadTextures()
 void drawPoint(struct point *pt)
 {
 	Texture2D *t = &textures[pt->role];
-
 	Rectangle source = { 0.0f, 0.0f, (float)t->width, (float)t->height };
 	Rectangle dest = { pt->p.x - RADIUS, pt->p.y - RADIUS, RADIUS * 2.0,
 			   RADIUS * 2.0 };
