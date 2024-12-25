@@ -3,6 +3,10 @@
 #include <time.h>
 #include <math.h>
 
+#ifdef PLATFORM_WEB
+#include <emscripten/emscripten.h>
+#endif
+
 #include "raylib.h"
 
 enum role {
@@ -123,34 +127,43 @@ void drawPoint(struct point *pt)
 	DrawTexturePro(*t, source, dest, origin, 0.0f, WHITE);
 }
 
+void UpdateDrawFrame(void)
+{
+	BeginDrawing();
+
+	ClearBackground(RAYWHITE);
+
+	for (int i = 0; i < N_POINTS; ++i) {
+		move(points[i]);
+	}
+
+	duel();
+
+	for (int i = 0; i < N_POINTS; ++i) {
+		drawPoint(points[i]);
+	}
+
+	EndDrawing();
+}
+
 int main(void)
 {
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "rps");
 	// textures must be loaded after `InitWindow`
 	loadTextures();
 
-	SetTargetFPS(30);
-
 	srand(time(NULL));
 	initWorld();
 
+#ifdef PLATFORM_WEB
+	emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
+#else
+	SetTargetFPS(30);
+
 	while (!WindowShouldClose()) {
-		BeginDrawing();
-
-		ClearBackground(RAYWHITE);
-
-		for (int i = 0; i < N_POINTS; ++i) {
-			move(points[i]);
-		}
-
-		duel();
-
-		for (int i = 0; i < N_POINTS; ++i) {
-			drawPoint(points[i]);
-		}
-
-		EndDrawing();
+		UpdateDrawFrame();
 	}
+#endif
 
 	CloseWindow();
 
